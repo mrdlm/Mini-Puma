@@ -12,7 +12,7 @@ class MyApp
     # Simple routing based on path and method
     case [request_method, path]
     when ['GET', '/']
-      home_page
+      home_page(env)
     when ['GET', '/about']
       about_page
     when ['GET', '/api/hello']
@@ -27,7 +27,11 @@ class MyApp
   private
 
   # Home page handler
-  def home_page
+  def home_page(env)
+    # Show some headers to verify parsing works
+    user_agent = env['HTTP_USER_AGENT'] || 'Not provided'
+    host = env['HTTP_HOST'] || 'Not provided'
+
     html = <<~HTML
       <!DOCTYPE html>
       <html>
@@ -42,6 +46,12 @@ class MyApp
       <body>
         <h1>Welcome to My Real Rack App! 🚀</h1>
         <p>This is a proper Rack application class, not just a lambda.</p>
+
+        <h2>Request Headers (parsed!):</h2>
+        <ul>
+          <li><strong>User-Agent:</strong> #{user_agent}</li>
+          <li><strong>Host:</strong> #{host}</li>
+        </ul>
 
         <h2>Available Routes:</h2>
         <ul>

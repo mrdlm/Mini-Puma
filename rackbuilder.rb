@@ -46,9 +46,21 @@ loop do
       path, query = target.split("?", 2)
       query ||= ""
 
-      # Skip headers until blank line
-      while (line = conn.gets) && line != "\r\n"; end
+      # Key-value pairs: headers["Content-Type"] = "application/json"
+      headers = {}
+      while (line = conn.gets) && line != "\r\n"
+        key, value = line.split(": ", 2)
+        headers[key] = value.strip if value
+      end
 
+      body_data = ""
+
+      if headers["Content-Length"]
+        content_length = headers["Content-Length"].to_i
+
+        body_data = conn.read(content_length) if content_length > 0
+      end 
+      
       # Build Rack environment
       env = {
         "REQUEST_METHOD" => method,
@@ -56,10 +68,25 @@ loop do
         "QUERY_STRING"   => query,
         "SERVER_NAME"    => "127.0.0.1",
         "SERVER_PORT"    => "9292",
-        "rack.input"     => StringIO.new(""),
+        "rack.input"     => StringIO.new(body_data),
         "rack.errors"    => $stderr,
         "rack.url_scheme" => "http"
       }
+
+      # Add HTTP headers to env (Rack spec)
+      headers.each do |key, value|
+        # Special cases: Content-Type and Content-Length don't get HTTP_ prefix
+        env_key = case key
+        when "Content-Type"
+          "CONTENT_TYPE"
+        when "Content-Length"
+          "CONTENT_LENGTH"
+        else
+          # Convert "User-Agent" to "HTTP_USER_AGENT"
+          "HTTP_#{key.upcase.gsub('-', '_')}"
+        end
+        env[env_key] = value
+      end
 
       # Call Rack app
       status, headers, body = app.call(env)
