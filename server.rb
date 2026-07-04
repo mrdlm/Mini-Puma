@@ -2,10 +2,10 @@ require "socket"
 require "stringio"
 
 # ==============================================================================
-# Rack Builder - Loads and evaluates config.ru files
+# Server - Loads and evaluates config.ru files
 # ==============================================================================
 
-class MiniRackBuilder
+class Server
   def self.load_file(path)
     b = new
     b.instance_eval(File.read(path), path)
@@ -20,7 +20,7 @@ end
 # Setup
 # ==============================================================================
 
-app = MiniRackBuilder.load_file("config.ru")
+app = Server.load_file("config.ru")
 
 REASONS = { 200 => "OK", 404 => "NOT FOUND" }
 
